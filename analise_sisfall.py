@@ -26,3 +26,22 @@ df['Eixo_Z_g'] = df['ADXL_Z'] / 256.0
 # Cálculo do SVM (Signal Vector Magnitude) que ja foi implementado no ESP32
 df['SVM'] = np.sqrt(df['Eixo_X_g']**2 + df['Eixo_Y_g']**2 + df['Eixo_Z_g']**2)
 
+# O sensor coletava dados a 200Hz (200 amostras por segundo).
+# Criação de um eixo de tempo em segundos.
+tempo_segundos = np.arange(len(df)) / 200.0
+
+plt.figure(figsize=(12, 6))
+plt.plot(tempo_segundos, df['SVM'], color='red', label='SVM (Magnitude Total)', linewidth=2)
+plt.plot(tempo_segundos, df['Eixo_X_g'], color='blue', alpha=0.3, label='Eixo X')
+plt.plot(tempo_segundos, df['Eixo_Y_g'], color='green', alpha=0.3, label='Eixo Y')
+plt.plot(tempo_segundos, df['Eixo_Z_g'], color='orange', alpha=0.3, label='Eixo Z')
+
+plt.title('Análise Cinemática de uma Queda (SisFall - F01_SA01)', fontsize=14)
+plt.xlabel('Tempo (segundos)', fontsize=12)
+plt.ylabel('Aceleração (g)', fontsize=12)
+plt.axhline(y=3.0, color='black', linestyle='--', label='Limiar Comum (3.0g)') # Linha de corte heurística
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.savefig('grafico_queda.png', dpi=300, bbox_inches='tight')
+print("Gráfico salvo com sucesso! Verifique o arquivo grafico_queda.png na sua pasta.")
