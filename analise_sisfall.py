@@ -15,3 +15,14 @@ df = pd.read_csv(caminho_arquivo, sep=',', names=nomes_colunas, engine='python')
 # Limpeza: a última coluna vem com o ';' anexado aos números. Vamos remover e converter para float.
 df['MMA_Z'] = df['MMA_Z'].astype(str).str.replace(';', '').astype(float)
 
+
+# Utilizaremos o Acelerômetro 1 (ADXL345) porque ele mede até 16g (ideal para captar quedas brutais).
+# Resolução de 13 bits para uma faixa de 32g (de -16g a +16g): (2^13) / 32 = 256 LSB/g.
+# Portanto, dividimos os valores por 256 para obter a força em g.
+df['Eixo_X_g'] = df['ADXL_X'] / 256.0
+df['Eixo_Y_g'] = df['ADXL_Y'] / 256.0
+df['Eixo_Z_g'] = df['ADXL_Z'] / 256.0
+
+# Cálculo do SVM (Signal Vector Magnitude) que ja foi implementado no ESP32
+df['SVM'] = np.sqrt(df['Eixo_X_g']**2 + df['Eixo_Y_g']**2 + df['Eixo_Z_g']**2)
+
