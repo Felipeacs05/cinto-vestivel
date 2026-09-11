@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Análise da Queda Frontal (F01) do Adulto Jovem 01 (SA01), Repetição 1 (R01)
-caminho_arquivo = 'SisFall_dataset/SA01/F01_SA01_R01.txt'
+caminho_arquivo = 'SisFall_dataset/SE01/D04_SE01_R01.txt'
 
 # O arquivo usa vírgulas para separar colunas e tem um ponto e vírgula no final de cada linha.
 # Lemos as 9 primeiras colunas correspondentes aos sensores.
@@ -40,8 +40,11 @@ plt.title('Análise Cinemática de uma Queda (SisFall - F01_SA01)', fontsize=14)
 plt.xlabel('Tempo (segundos)', fontsize=12)
 plt.ylabel('Aceleração (g)', fontsize=12)
 plt.axhline(y=3.0, color='black', linestyle='--', label='Limiar Comum (3.0g)') # Linha de corte heurística
+
+plt.ylim(-15, 15)
+
 plt.legend()
 plt.grid(True)
 plt.tight_layout()
-plt.savefig('grafico_queda.png', dpi=300, bbox_inches='tight')
+plt.savefig('grafico_SE01.png', dpi=300, bbox_inches='tight')
 print("Gráfico salvo com sucesso! Verifique o arquivo grafico_queda.png na sua pasta.")
