@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Análise da Queda Frontal (F01) do Adulto Jovem 01 (SA01), Repetição 1 (R01)
-caminho_arquivo = 'SisFall_dataset/SE01/D04_SE01_R01.txt'
+caminho_arquivo = 'SisFall_dataset/SA01/F10_SA01_R01.txt'
 
 # O arquivo usa vírgulas para separar colunas e tem um ponto e vírgula no final de cada linha.
 # Lemos as 9 primeiras colunas correspondentes aos sensores.
@@ -36,15 +36,22 @@ plt.plot(tempo_segundos, df['Eixo_X_g'], color='blue', alpha=0.3, label='Eixo X'
 plt.plot(tempo_segundos, df['Eixo_Y_g'], color='green', alpha=0.3, label='Eixo Y')
 plt.plot(tempo_segundos, df['Eixo_Z_g'], color='orange', alpha=0.3, label='Eixo Z')
 
-plt.title('Análise Cinemática de uma Queda (SisFall - F01_SA01)', fontsize=14)
+tipo_movimento = "Queda" if "F" in caminho_arquivo else "Atividade Diária"
+plt.title(f'Análise Cinemática: {tipo_movimento} (SisFall - {caminho_arquivo[16:33]})', fontsize=14)
+
 plt.xlabel('Tempo (segundos)', fontsize=12)
 plt.ylabel('Aceleração (g)', fontsize=12)
 plt.axhline(y=3.0, color='black', linestyle='--', label='Limiar Comum (3.0g)') # Linha de corte heurística
 
+# Padronizando as escalas visuais
 plt.ylim(-15, 15)
+plt.xlim(0, 15) # Força o gráfico a mostrar apenas uma janela de 15 segundos
 
 plt.legend()
 plt.grid(True)
 plt.tight_layout()
-plt.savefig('grafico_SE01.png', dpi=300, bbox_inches='tight')
-print("Gráfico salvo com sucesso! Verifique o arquivo grafico_queda.png na sua pasta.")
+
+nome_imagem = f'grafico_{caminho_arquivo[16:33].replace("/", "-")}.png'
+plt.savefig(nome_imagem, dpi=300, bbox_inches='tight')
+
+print(f"Gráfico salvo com sucesso: {nome_imagem}")
