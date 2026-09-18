@@ -11,3 +11,7 @@ df['MMA_Z'] = df['MMA_Z'].astype(str).str.replace(';', '').astype(float)
 df['Eixo_X_g'] = df['ADXL_X'] / 256.0
 df['Eixo_Y_g'] = df['ADXL_Y'] / 256.0
 df['Eixo_Z_g'] = df['ADXL_Z'] / 256.0
+
+frequencia_amostragem = 200.0 # Sensor gravou a 200 Hz
+frequencia_corte = 5.0 # Cortar tudo acima de 5 Hz (Movimento Humano)
+ordem = 4 # Filtro de 4ª ordem
