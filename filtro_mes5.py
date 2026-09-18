@@ -31,3 +31,23 @@ df['SVM_Bruto'] = np.sqrt(df['Eixo_X_g']**2 + df['Eixo_Y_g']**2 + df['Eixo_Z_g']
 df['SVM_Filtrado'] = np.sqrt(df['X_filtrado']**2 + df['Y_filtrado']**2 + df['Z_filtrado']**2)
 
 tempo_segundos = np.arange(len(df)) / frequencia_amostragem
+
+plt.figure(figsize=(12, 6))
+
+# Linha do sinal sujo (ruído original)
+plt.plot(tempo_segundos, df['SVM_Bruto'], color='lightcoral', alpha=0.6, label='SVM Bruto (Com Ruído)', linewidth=1)
+
+# Linha do sinal limpo pelo Butterworth
+plt.plot(tempo_segundos, df['SVM_Filtrado'], color='darkred', label='SVM Filtrado (Butterworth 5Hz)', linewidth=2)
+
+plt.axhline(y=1.0, color='gray', linestyle=':', label='Gravidade Basal')
+plt.title(f'Efeito do Filtro Butterworth - Caminhada Idoso (SisFall)', fontsize=14)
+plt.xlabel('Tempo (segundos)')
+plt.ylabel('Magnitude (g)')
+plt.xlim(0, 10) # Focando nos primeiros 10 segundos para ver os detalhes da curva
+plt.ylim(0, 3) # Eixo Y ajustado pois caminhada não tem grandes picos
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.savefig('comparativo_filtro.png', dpi=300)
+print("Gráfico do Filtro salvo com sucesso!")
