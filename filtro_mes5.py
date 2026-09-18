@@ -40,14 +40,17 @@ plt.plot(tempo_segundos, df['SVM_Bruto'], color='lightcoral', alpha=0.6, label='
 # Linha do sinal limpo pelo Butterworth
 plt.plot(tempo_segundos, df['SVM_Filtrado'], color='darkred', label='SVM Filtrado (Butterworth 5Hz)', linewidth=2)
 
-plt.axhline(y=1.0, color='gray', linestyle=':', label='Gravidade Basal')
-plt.title(f'Efeito do Filtro Butterworth - Caminhada Idoso (SisFall)', fontsize=14)
-plt.xlabel('Tempo (segundos)')
-plt.ylabel('Magnitude (g)')
-plt.xlim(0, 10) # Focando nos primeiros 10 segundos para ver os detalhes da curva
-plt.ylim(0, 3) # Eixo Y ajustado pois caminhada não tem grandes picos
-plt.legend()
+plt.axhline(y=1.0, color='gray', linestyle=':', label='Gravidade Basal (1.0g)')
+plt.title('Filtragem Digital de Sinal Inercial - Caminhada (SisFall - D01_SE01)', fontsize=14)
+plt.xlabel('Tempo (segundos)', fontsize=12)
+plt.ylabel('Magnitude Resultante (g)', fontsize=12)
+
+# Zoom nos primeiros 10 segundos para visualização do ganho de suavidade
+plt.xlim(0, 10)
+plt.ylim(0, 3)
+
+plt.legend(loc='upper right')
 plt.grid(True)
 plt.tight_layout()
-plt.savefig('comparativo_filtro.png', dpi=300)
-print("Gráfico do Filtro salvo com sucesso!")
+plt.savefig('comparativo_butterworth_M5.png', dpi=300)
+print("Sinal processado e imagem 'comparativo_butterworth_M5.png' gerada.")
