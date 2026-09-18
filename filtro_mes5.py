@@ -29,3 +29,5 @@ df['Z_filtrado'] = filtfilt(b, a, df['Eixo_Z_g'])
 #Um Bruto e um Filtrado para comparação
 df['SVM_Bruto'] = np.sqrt(df['Eixo_X_g']**2 + df['Eixo_Y_g']**2 + df['Eixo_Z_g']**2)
 df['SVM_Filtrado'] = np.sqrt(df['X_filtrado']**2 + df['Y_filtrado']**2 + df['Z_filtrado']**2)
+
+tempo_segundos = np.arange(len(df)) / frequencia_amostragem
