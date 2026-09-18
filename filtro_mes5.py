@@ -21,3 +21,7 @@ frequencia_nyquist = 0.5 * frequencia_amostragem
 corte_normalizado = frequencia_corte / frequencia_nyquist
 
 b, a = butter(ordem, corte_normalizado, btype='low', analog=False)
+
+df['X_filtrado'] = filtfilt(b, a, df['Eixo_X_g'])
+df['Y_filtrado'] = filtfilt(b, a, df['Eixo_Y_g'])
+df['Z_filtrado'] = filtfilt(b, a, df['Eixo_Z_g'])
