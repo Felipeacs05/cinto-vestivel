@@ -19,3 +19,5 @@ ordem = 4 # Filtro de 4ª ordem
 #Teorema de Nyquist
 frequencia_nyquist = 0.5 * frequencia_amostragem
 corte_normalizado = frequencia_corte / frequencia_nyquist
+
+b, a = butter(ordem, corte_normalizado, btype='low', analog=False)
