@@ -15,3 +15,7 @@ df['Eixo_Z_g'] = df['ADXL_Z'] / 256.0
 frequencia_amostragem = 200.0 # Sensor gravou a 200 Hz
 frequencia_corte = 5.0 # Cortar tudo acima de 5 Hz (Movimento Humano)
 ordem = 4 # Filtro de 4ª ordem
+
+#Teorema de Nyquist
+frequencia_nyquist = 0.5 * frequencia_amostragem
+corte_normalizado = frequencia_corte / frequencia_nyquist
