@@ -32,10 +32,10 @@ for pasta_raiz, _, arquivos in os.walk(dataset_dir):
             if len(partes_nome) < 3: 
                 continue
                 
-            atividade = partes_nome[0] # Ex: F01 ou D04
-            sujeito = partes_nome[1]   # Ex: SA01 ou SE15
+            atividade = partes_nome[0]
+            sujeito = partes_nome[1]
             
-            # Lógica de Rotulação (Labeling)
+            # Lógica de Rotulação 
             classe = 1 if atividade.startswith('F') else 0
             grupo_idade = 'Jovem' if sujeito.startswith('SA') else 'Idoso'
 
@@ -45,7 +45,7 @@ for pasta_raiz, _, arquivos in os.walk(dataset_dir):
                 df = pd.read_csv(caminho_completo, sep=',', names=nomes_colunas, engine='python')
                 df['MMA_Z'] = df['MMA_Z'].astype(str).str.replace(';', '').astype(float)
             except Exception as e:
-                continue # Pula arquivos corrompidos, se houver
+                continue 
             
             # Conversão ADC -> g
             df['X_g'] = df['ADXL_X'] / 256.0
@@ -53,12 +53,10 @@ for pasta_raiz, _, arquivos in os.walk(dataset_dir):
             df['Z_g'] = df['ADXL_Z'] / 256.0
             
             # 5. APLICAÇÃO DO FILTRO NAS TRÊS DIMENSÕES
-            # Nota: Aplicamos o filtro nos eixos X, Y e Z individualmente ANTES de calcular o SVM final
             x_filt = filtfilt(b, a, df['X_g'])
             y_filt = filtfilt(b, a, df['Y_g'])
             z_filt = filtfilt(b, a, df['Z_g'])
             
-            # Cálculo do SVM Filtrado
             svm_filt = np.sqrt(x_filt**2 + y_filt**2 + z_filt**2)
             
             # 6. ESTRUTURAÇÃO DO DATAFRAME LIMPO (Descartamos os dados brutos para economizar espaço)
@@ -79,3 +77,15 @@ for pasta_raiz, _, arquivos in os.walk(dataset_dir):
             # Feedback visual no terminal a cada 500 arquivos processados
             if arquivos_processados % 500 == 0:
                 print(f"[{arquivos_processados}/4505] arquivos processados...")
+
+print(f"\nVarredura concluída! {arquivos_processados} arquivos lidos.")
+print("Concatenando matrizes... (isso pode exigir memória RAM)")
+df_mestre = pd.concat(lista_dataframes, ignore_index=True)
+
+print(f"Matriz Mestre criada com sucesso! Total de amostras temporais: {len(df_mestre)} linhas.")
+print("Salvando o arquivo CSV unificado no disco...")
+
+df_mestre.to_csv('dataset_sisfall_unificado.csv', index=False)
+
+print("SUCESSO! Arquivo 'dataset_sisfall_unificado.csv' gerado.")
+print("O Mês 5 está 100% concluído!")
