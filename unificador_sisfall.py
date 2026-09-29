@@ -16,3 +16,8 @@ frequencia_corte = 5.0
 ordem_filtro = 4
 corte_normalizado = frequencia_corte / (0.5 * frequencia_amostragem)
 b, a = butter(ordem_filtro, corte_normalizado, btype='low', analog=False)
+
+# 2. DIRETÓRIO DO DATASET E LISTA MESTRE
+dataset_dir = 'SisFall_dataset'
+lista_dataframes = []
+arquivos_processados = 0
