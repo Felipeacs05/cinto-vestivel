@@ -36,3 +36,41 @@ A consolidação de técnicas de Inteligência Artificial embarcada (*Edge AI* /
 
 ## 2 REVISÃO BIBLIOGRÁFICA E ANÁLISE DE DATASETS PÚBLICOS
 
+A construção de modelos de aprendizado de máquina voltados à cinemática humana exige conjuntos de dados representativos, amostrados em taxas compatíveis com a dinâmica do impacto e isentos de vieses populacionais. Durante o primeiro mês, foram analisadas as duas principais bases públicas de referência estipuladas no Plano de Trabalho: **SisFall** e **UMAFall**.
+
+### 2.1 O Dataset SisFall e o Viés Etário na Cinemática
+
+Desenvolvido por Sucerquia, López e Vargas-Bonilla (2017) na *Universidad de Antioquia*, o dataset **SisFall** constitui o referencial metodológico central deste projeto. Os autores demonstraram empiricamente que modelos calibrados exclusivamente com voluntários jovens perdem sensibilidade ao serem testados em indivíduos idosos, uma vez que a dinâmica muscular, a rigidez articular e a velocidade de marcha alteram-se substancialmente com o envelhecimento.
+
+A base é composta por **4.505 arquivos** de séries temporais coletados a uma frequência de amostragem de $f_s = 200\text{ Hz}$ por meio de um dispositivo fixado na cintura dos voluntários, abrangendo **38 participantes** divididos em dois grupos:
+* **Grupo Adulto Jovem (`SA01` a `SA23`):** 23 voluntários com idades entre 19 e 30 anos, que executaram tanto 19 categorias de Atividades de Vida Diária (`D01` a `D19`) quanto 15 modalidades de quedas simuladas (`F01` a `F15`) sobre colchões de amortecimento;
+* **Grupo Idoso (`SE01` a `SE15`):** 15 voluntários com idades entre 60 e 75 anos, submetidos às atividades cotidianas (`D`) para registrar a assinatura biomecânica real do corpo envelhecido sem exposição a riscos físicos (com exceção do voluntário `SE06`, especialista em judô, que também realizou ensaios de queda).
+
+### 2.2 O Dataset UMAFall e a Escolha Topológica da Cintura
+
+Complementarmente, analisou-se o estudo de Casilari, Santoyo-Ramón e Cano-García (2017), responsável pelo dataset **UMAFall** (531 arquivos). Os autores investigaram a influência do ponto de fixação anatômica do sensor inercial comparando cinco regiões do corpo: punho, tornozelo, bolso da calça, tórax e cintura. Os resultados comprovaram que extremidades apendiculares (como punho e tornozelo) sofrem acelerações espúrias severas decorrentes de gesticulações independentes do equilíbrio postural. A **cintura**, por situar-se próxima ao centro de massa (centro de gravidade) do corpo humano, apresentou a melhor relação sinal-ruído e a maior capacidade discriminativa entre quedas e ADLs, justificando tecnicamente o formato de **cinto vestível** adotado neste projeto.
+
+**Quadro 1 — Síntese comparativa das bases de dados científicas analisadas no Mês 01.**
+
+| Característica Técnica | Dataset SisFall | Dataset UMAFall |
+| :--- | :--- | :--- |
+| **Referência Principal** | Sucerquia, López e Vargas-Bonilla (2017) | Casilari, Santoyo-Ramón e Cano-García (2017) |
+| **Volume de Dados** | 4.505 arquivos de ensaios inerciais | 531 arquivos de ensaios multissensoriais |
+| **Participantes** | 38 voluntários (23 jovens `SA` e 15 idosos `SE`) | 17 voluntários |
+| **Posição Anatômica** | Cintura (fixação rígida próxima ao centro de massa) | Cintura, tórax, punho, tornozelo e bolso |
+| **Taxa de Amostragem ($f_s$)** | $200\text{ Hz}$ | $20\text{ Hz}$ a $200\text{ Hz}$ |
+| **Variáveis Registradas** | Aceleração triaxial ($\pm 16\text{ g}$ / $\pm 8\text{ g}$) e Giroscópio | Aceleração triaxial, Giroscópio e Magnetômetro |
+
+**Fonte:** Elaborado pelo autor com base em Sucerquia, López e Vargas-Bonilla (2017) e Casilari, Santoyo-Ramón e Cano-García (2017).
+
+---
+
+## 3 ESPECIFICAÇÃO DOS COMPONENTES DE HARDWARE
+
+Com base nos requisitos de processamento em borda, conectividade sem fio e portabilidade anatômica, definiu-se a arquitetura física do protótipo de cinto inteligente. A Figura 1 esquematiza o fluxo de integração entre os módulos selecionados para o primeiro ciclo de 12 meses.
+
+```
++-------------------------------------------------------------------+
+|                   PROTÓTIPO DO CINTO VESTÍVEL                     |
+|                                                                   |
+|  +------------------+       Barramento I2C      +--------------+  |
