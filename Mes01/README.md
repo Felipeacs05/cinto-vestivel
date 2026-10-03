@@ -74,3 +74,63 @@ Com base nos requisitos de processamento em borda, conectividade sem fio e porta
 |                   PROTÓTIPO DO CINTO VESTÍVEL                     |
 |                                                                   |
 |  +------------------+       Barramento I2C      +--------------+  |
+|  | Sensor Inercial  |  ======================>  |              |  |
+|  |     MPU-9250     |    SDA (GPIO8) / SCL (9)  |              |  |
+|  +------------------+                           |  Microcontr. |  |
+|                                                 |    ESP32     |  |
+|  +------------------+      Alimentação 3,7V     |  (Dual-Core) |  |
+|  |   Bateria LiPo   |  ---------------------->  |              |  |
+|  +------------------+                           +--------------+  |
+|                                                    |        |     |
+|                                      Sinal Digital |        |     |
+|                                                    v        |     |
+|                                            +--------------+ |     |
+|                                            | Display LED  | |     |
+|                                            | (Alerta Loc) | |     |
+|                                            +--------------+ |     |
++-------------------------------------------------------------|-----+
+                                                              |
+                                               Transmissão    | Wi-Fi (IEEE 802.11)
+                                                 HTTPS/TLS    v
+                                                    +------------------+
+                                                    |   Google Cloud   |
+                                                    |   Firebase RTDB  |
+                                                    +------------------+
+```
+
+**Quadro 2 — Especificação técnica dos componentes selecionados para o protótipo.**
+
+| Componente | Modelo / Especificação | Função no Sistema | Justificativa Técnica |
+| :--- | :--- | :--- | :--- |
+| **Microcontrolador** | Espressif ESP32 | Processamento central, aquisição I2C, transmissão Wi-Fi e inferência TinyML | Arquitetura *dual-core* de 32 bits, $520\text{ KB}$ de SRAM, suporte nativo a ponto flutuante (FPU) e rádio Wi-Fi integrado (ESPRESSIF SYSTEMS, 2026). |
+| **Sensor Inercial (IMU)** | InvenSense MPU-9250 (9-DOF) | Captura da aceleração linear triaxial ($a_x, a_y, a_z$) e velocidade angular | Conversor ADC de 16 bits por canal, fundo de escala programável ($\pm 2\text{ g}$ a $\pm 16\text{ g}$) e comunicação I2C de até $400\text{ kHz}$ (INVENSENSE, 2026). |
+| **Unidade de Energia** | Bateria LiPo $3,7\text{ V}$ | Alimentação autônoma do dispositivo vestível | Elevada densidade energética, baixo peso e perfil plano adequado para alojamento junto ao cinto. |
+| **Sinalizador Local** | Display / Indicador de LED | Sinalização visual imediata do resultado da inferência em borda | Baixo consumo de corrente e resposta instantânea para validação de bancada e alerta próximo. |
+
+**Fonte:** Elaborado pelo autor (2026).
+
+---
+
+## 4 CONCLUSÃO DA ETAPA
+
+As atividades previstas para o Mês 01 foram integralmente cumpridas. A revisão sistemática da literatura confirmou a necessidade de abandonar métodos puramente heurísticos de limiar fixo em favor de modelos supervisionados alimentados por variáveis previamente filtradas no domínio da frequência. Adicionalmente, todos os componentes eletrônicos necessários para a montagem em bancada foram especificados e preparados para a integração física prevista para o Mês 02.
+
+---
+
+## REFERÊNCIAS
+
+BOURKE, A. K.; O'BRIEN, J. V.; LYONS, G. M. Evaluation of a threshold-based tri-axial accelerometer fall detection algorithm. **Gait & Posture**, v. 26, n. 2, p. 194-199, 2007.
+
+CASILARI, E.; SANTOYO-RAMÓN, J. A.; CANO-GARCÍA, J. M. UMAFall: A Multisensor Dataset for the Research on Automatic Fall Detection. **Procedia Computer Science**, v. 110, p. 32-39, 2017.
+
+CHEN, J.; RAN, X. Deep Learning With Edge Computing: A Review. **Proceedings of the IEEE**, v. 107, n. 8, p. 1655-1674, 2019.
+
+ESPRESSIF SYSTEMS. **ESP32 Series Datasheet**. Xangai: Espressif Systems, 2026. Disponível em: https://docs.espressif.com. Acesso em: 15 ago. 2026.
+
+IGUAL, R.; MEDRANO, C.; PLAZA, I. Challenges, issues and trends in fall detection systems. **BioMedical Engineering OnLine**, v. 12, n. 1, p. 66, 2013.
+
+INVENSENSE. **MPU-9250 Product Specification Revision 1.1**. San Jose: TDK InvenSense, 2026. Disponível em: https://invensense.tdk.com. Acesso em: 15 ago. 2026.
+
+SUCERQUIA, A.; LÓPEZ, J. D.; VARGAS-BONILLA, J. F. SisFall: A Fall and Movement Dataset. **Sensors**, v. 17, n. 1, p. 198, 2017.
+
+WARDEN, P.; SITUNAYAKE, D. **TinyML**: Machine Learning with TensorFlow Lite on Arduino and Ultra-Low-Power Microcontrollers. Sebastopol: O'Reilly Media, 2019.
