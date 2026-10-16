@@ -73,3 +73,72 @@ def carregar_arquivo_sisfall(caminho_arquivo):
             caminho_arquivo = alternativo
         else:
             raise FileNotFoundError(f"Arquivo não encontrado (.txt ou .csv): {caminho_arquivo}")
+
+    nomes_colunas = ['ADXL_X', 'ADXL_Y', 'ADXL_Z', 'ITG_X', 'ITG_Y', 'ITG_Z', 'MMA_X', 'MMA_Y', 'MMA_Z']
+
+    if caminho_arquivo.lower().endswith('.csv'):
+        df_raw = pd.read_csv(caminho_arquivo)
+        if 'ADXL345_Acc_X' in df_raw.columns:
+            df = pd.DataFrame()
+            df['Eixo_X_g'] = pd.to_numeric(df_raw['ADXL345_Acc_X'], errors='coerce')
+            df['Eixo_Y_g'] = pd.to_numeric(df_raw['ADXL345_Acc_Y'], errors='coerce')
+            df['Eixo_Z_g'] = pd.to_numeric(df_raw['ADXL345_Acc_Z'], errors='coerce')
+            return df.dropna(), caminho_arquivo
+        else:
+            df = pd.read_csv(caminho_arquivo, sep=',', names=nomes_colunas, usecols=range(9))
+    else:
+        df = pd.read_csv(caminho_arquivo, sep=',', names=nomes_colunas, usecols=range(9), engine='c')
+
+    for col in ['ADXL_X', 'ADXL_Y', 'ADXL_Z']:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+    df = df.dropna(subset=['ADXL_X', 'ADXL_Y', 'ADXL_Z'])
+
+    df['Eixo_X_g'] = df['ADXL_X'] / 256.0
+    df['Eixo_Y_g'] = df['ADXL_Y'] / 256.0
+    df['Eixo_Z_g'] = df['ADXL_Z'] / 256.0
+    return df, caminho_arquivo
+```
+
+---
+
+## 3 ANÁLISE GRÁFICA DOS CENÁRIOS BIOMECÂNICOS
+
+Padronizou-se uma janela temporal de visualização de $0\text{ s}$ a $15\text{ s}$ no eixo das abscissas e limites de aceleração de $-15\text{ g}$ a $+15\text{ g}$ (painel superior triaxial) e de $0\text{ g}$ a $15\text{ g}$ (painel inferior do vetor resultante $\text{SVM} = \sqrt{X^2 + Y^2 + Z^2}$), demarcando-se a gravidade basal ($1,0\text{ g}$) e o limiar heurístico clássico ($3,0\text{ g}$).
+
+### 3.1 Cenário A: Caminhada Lenta — Adulto Jovem (`D01_SA01_R01`)
+
+Na Figura 1, observa-se uma oscilação periódica regular nos canais triaxiais, com predominância da componente vertical (Eixo Y) em torno de $-1,0\text{ g}$ devido à orientação do sensor na cintura. O vetor resultante $\text{SVM}$ flutua ciclicamente entre $0,8\text{ g}$ e $1,5\text{ g}$ a cada toque do calcanhar no solo, permanecendo distante do limiar de $3,0\text{ g}$.
+
+![Figura 1 — Análise exploratória da caminhada lenta de adulto jovem (D01_SA01_R01).](exploratoria_D01_SA01_R01.png)  
+**Figura 1 —** Canais inerciais triaxiais e Vetor de Soma da Magnitude (SVM) para caminhada lenta de adulto jovem (`D01_SA01_R01`). **Fonte:** Elaborado pelo autor (2026).
+
+### 3.2 Cenário B: Queda Frontal por Escorregão — Adulto Jovem (`F01_SA01_R01`)
+
+A Figura 2 expõe a anatomia física completa de um evento de queda por volta do instante $t = 7,0\text{ s}$, dividida em três estágios sequenciais:
+1. **Fase de Imponderabilidade (Queda Livre):** Segundos antes da colisão, a perda de sustentação faz com que a resultante $\text{SVM}$ caia momentaneamente abaixo da linha de gravidade basal ($< 1,0\text{ g}$);
+2. **Fase de Impacto Agudo:** No instante do choque do tronco contra o solo, o Eixo Z sofre uma deflexão abrupta até cerca de $-12,0\text{ g}$, elevando o pico do vetor $\text{SVM}$ para aproximadamente $14,0\text{ g}$ (rompendo drasticamente o limiar de $3,0\text{ g}$);
+3. **Fase de Repouso Pós-Queda:** Imediatamente após o amortecimento da colisão ($t > 8,5\text{ s}$), as oscilações cessam, os eixos Y e Z invertem seus patamares estáticos (evidenciando a rotação de $90^\circ$ do tronco para a posição horizontal) e o $\text{SVM}$ estabiliza-se em $1,0\text{ g}$.
+
+![Figura 2 — Análise exploratória de queda frontal por escorregão (F01_SA01_R01).](exploratoria_F01_SA01_R01.png)  
+**Figura 2 —** Anatomia inercial de uma queda frontal (`F01_SA01_R01`), destacando queda livre, pico de impacto ($\approx 14\text{ g}$) e imobilidade pós-impacto. **Fonte:** Elaborado pelo autor (2026).
+
+### 3.3 Cenário C: Caminhada Lenta — Voluntário Idoso (`D01_SE01_R01`)
+
+Na Figura 3, referente a um voluntário idoso de 71 anos (`SE01`), o envelope macroscópico do $\text{SVM}$ mantém-se na faixa segura entre $0,8\text{ g}$ e $1,6\text{ g}$. Todavia, nota-se uma densidade maior de micro-oscilações de alta frequência ("serrilhado" na curva vermelha), decorrente da transmissão de vibrações de impacto (*heel strike*) e menor amortecimento articular, demonstrando visualmente a necessidade da filtragem digital passa-baixa a ser executada no Mês 05.
+
+![Figura 3 — Análise exploratória da caminhada de voluntário idoso (D01_SE01_R01).](exploratoria_D01_SE01_R01.png)  
+**Figura 3 —** Sinal inercial de caminhada de voluntário idoso (`D01_SE01_R01`), evidenciando ruído de alta frequência sobreposto à marcha. **Fonte:** Elaborado pelo autor (2026).
+
+---
+
+## 4 CONCLUSÃO DA ETAPA
+
+A análise exploratória conduzida no Mês 04 comprovou que uma queda real distingue-se de atividades normais não apenas pela amplitude isolada do pico, mas pelo encadeamento morfológico entre queda livre, impacto, inversão de eixos gravitacionais e repouso subsequente. Além disso, a presença de ruído mecânico de alta frequência nos registros brutos fundamentou diretamente a etapa seguinte de Processamento Digital de Sinais (Mês 05).
+
+---
+
+## REFERÊNCIAS
+
+BOURKE, A. K.; O'BRIEN, J. V.; LYONS, G. M. Evaluation of a threshold-based tri-axial accelerometer fall detection algorithm. **Gait & Posture**, v. 26, n. 2, p. 194-199, 2007.
+
+SUCERQUIA, A.; LÓPEZ, J. D.; VARGAS-BONILLA, J. F. SisFall: A Fall and Movement Dataset. **Sensors**, v. 17, n. 1, p. 198, 2017.
