@@ -95,3 +95,72 @@ def extrair_features_janela(x_w, y_w, z_w, svm_w):
         'X_Std': x_std,
         'Y_Std': y_std,
         'Z_Std': z_std,
+        'X_Var': x_var,
+        'Y_Var': y_var,
+        'Z_Var': z_var,
+        'SMA': sma
+    }
+
+registros_features = []
+
+for idx, caminho in enumerate(lista_caminhos, 1):
+    nome_base, ext = os.path.splitext(os.path.basename(caminho))
+    partes = nome_base.split('_')
+    atividade, sujeito = partes[0], partes[1]
+    classe = 1 if atividade.startswith('F') else 0
+    grupo = 'Jovem' if sujeito.startswith('SA') else 'Idoso'
+
+    try:
+        if ext.lower() == '.csv':
+            df_raw = pd.read_csv(caminho, usecols=[0, 1, 2])
+            if 'ADXL345_Acc_X' in df_raw.columns:
+                x_g = pd.to_numeric(df_raw['ADXL345_Acc_X'], errors='coerce').to_numpy(dtype=np.float32)
+                y_g = pd.to_numeric(df_raw['ADXL345_Acc_Y'], errors='coerce').to_numpy(dtype=np.float32)
+                z_g = pd.to_numeric(df_raw['ADXL345_Acc_Z'], errors='coerce').to_numpy(dtype=np.float32)
+            else:
+                df_raw = pd.read_csv(caminho, sep=',', header=None, usecols=[0, 1, 2], dtype=np.float32, engine='c')
+                x_g = df_raw[0].to_numpy() / 256.0
+                y_g = df_raw[1].to_numpy() / 256.0
+                z_g = df_raw[2].to_numpy() / 256.0
+        else:
+            df_raw = pd.read_csv(caminho, sep=',', header=None, usecols=[0, 1, 2], dtype=np.float32, engine='c')
+            x_g = df_raw[0].to_numpy() / 256.0
+            y_g = df_raw[1].to_numpy() / 256.0
+            z_g = df_raw[2].to_numpy() / 256.0
+
+        mask = ~(np.isnan(x_g) | np.isnan(y_g) | np.isnan(z_g))
+        if not np.all(mask):
+            x_g, y_g, z_g = x_g[mask], y_g[mask], z_g[mask]
+        if len(x_g) < JANELA_AMOSTRAS:
+            continue
+    except Exception:
+        continue
+
+    # Filtragem Butterworth de 4ª ordem (5 Hz)
+    x_f = filtfilt(b, a, x_g)
+    y_f = filtfilt(b, a, y_g)
+    z_f = filtfilt(b, a, z_g)
+    svm_f = np.sqrt(x_f**2 + y_f**2 + z_f**2)
+
+    if classe == 1:
+        # Em arquivos de Queda (F), extrai a janela temporal de 2.0s centrada no pico de impacto máximo
+        idx_pico = int(np.argmax(svm_f))
+        inicio = max(0, min(idx_pico - JANELA_AMOSTRAS // 2, len(svm_f) - JANELA_AMOSTRAS))
+        fim = inicio + JANELA_AMOSTRAS
+
+        feats = extrair_features_janela(x_f[inicio:fim], y_f[inicio:fim], z_f[inicio:fim], svm_f[inicio:fim])
+        feats['Sujeito'] = sujeito
+        feats['Grupo'] = grupo
+        feats['Atividade'] = atividade
+        feats['Classe'] = 1
+        registros_features.append(feats)
+    else:
+        # Em arquivos de Atividades Diárias (D), extrai a janela de maior excitação dinâmica (hard negative)
+        # e uma janela de regime estacionário para representar fielmente ADLs intensas e moderadas
+        idx_pico = int(np.argmax(svm_f))
+        inicio_pico = max(0, min(idx_pico - JANELA_AMOSTRAS // 2, len(svm_f) - JANELA_AMOSTRAS))
+        fim_pico = inicio_pico + JANELA_AMOSTRAS
+
+        feats_pico = extrair_features_janela(
+            x_f[inicio_pico:fim_pico], y_f[inicio_pico:fim_pico], z_f[inicio_pico:fim_pico], svm_f[inicio_pico:fim_pico]
+        )
