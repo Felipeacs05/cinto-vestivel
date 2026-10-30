@@ -164,3 +164,87 @@ for idx, caminho in enumerate(lista_caminhos, 1):
         feats_pico = extrair_features_janela(
             x_f[inicio_pico:fim_pico], y_f[inicio_pico:fim_pico], z_f[inicio_pico:fim_pico], svm_f[inicio_pico:fim_pico]
         )
+        feats_pico['Sujeito'] = sujeito
+        feats_pico['Grupo'] = grupo
+        feats_pico['Atividade'] = atividade
+        feats_pico['Classe'] = 0
+        registros_features.append(feats_pico)
+
+    if idx % 1000 == 0:
+        print(f"  -> [{idx}/{len(lista_caminhos)}] ensaios processados...")
+
+df_features = pd.DataFrame(registros_features)
+arquivo_features = 'features_sisfall_janelas.csv'
+df_features.to_csv(arquivo_features, index=False)
+print(f"\nMatriz de Características salva em '{arquivo_features}' ({len(df_features)} janelas extraídas).")
+print(f"Distribuição de Classes: Quedas (1) = {(df_features['Classe']==1).sum()} | ADLs (0) = {(df_features['Classe']==0).sum()}\n")
+
+# 2. TREINAMENTO E VALIDAÇÃO CRUZADA K-FOLD (10-FOLD) - MÊS 7 E MÊS 8
+colunas_x = [
+    'SVM_Mean', 'SVM_Std', 'SVM_Var', 'SVM_Max', 'SVM_Min', 'SVM_PtP',
+    'SVM_Energy', 'SVM_Skew', 'SVM_Kurt',
+    'X_Std', 'Y_Std', 'Z_Std', 'X_Var', 'Y_Var', 'Z_Var', 'SMA'
+]
+
+X = df_features[colunas_x].to_numpy()
+y = df_features['Classe'].to_numpy()
+
+skf = StratifiedKFold(n_splits=10, shuffle=True, random_state=42)
+
+modelos = {
+    'SVM (RBF)': Pipeline([
+        ('scaler', StandardScaler()),
+        ('clf', SVC(kernel='rbf', C=10.0, gamma='scale', random_state=42))
+    ]),
+    'Random Forest': RandomForestClassifier(
+        n_estimators=100, max_depth=12, random_state=42, n_jobs=-1
+    )
+}
+
+resultados_metricas = {}
+predicoes_modelos = {}
+
+print("Executando Validação Cruzada Estratificada (10-Fold)...")
+for nome, modelo in modelos.items():
+    y_pred = cross_val_predict(modelo, X, y, cv=skf, n_jobs=-1)
+    predicoes_modelos[nome] = y_pred
+
+    acc = accuracy_score(y, y_pred)
+    prec = precision_score(y, y_pred)
+    rec = recall_score(y, y_pred)
+    f1 = f1_score(y, y_pred)
+
+    resultados_metricas[nome] = {
+        'Acurácia': acc,
+        'Precisão': prec,
+        'Recall (Sensibilidade)': rec,
+        'F1-Score': f1
+    }
+
+    print(f"\n--- Resultados 10-Fold: {nome} ---")
+    print(f"Acurácia:               {acc*100:.2f}%")
+    print(f"Precisão:               {prec*100:.2f}%")
+    print(f"Recall (Sensibilidade): {rec*100:.2f}%")
+    print(f"F1-Score:               {f1*100:.2f}%")
+    print("Matriz de Confusão:")
+    print(confusion_matrix(y, y_pred))
+
+# 3. GERAÇÃO DO GRÁFICO COMPARATIVO DE MATRIZES DE CONFUSÃO E MÉTRICAS
+fig, axes = plt.subplots(1, 2, figsize=(13, 5.5))
+for ax, (nome, y_pred) in zip(axes, predicoes_modelos.items()):
+    cm = confusion_matrix(y, y_pred)
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=['ADL (Normal)', 'Queda'])
+    disp.plot(ax=ax, cmap='Blues', colorbar=False, values_format='d')
+    m = resultados_metricas[nome]
+    ax.set_title(
+        f"{nome} (10-Fold CV)\nAcc: {m['Acurácia']*100:.2f}% | Recall: {m['Recall (Sensibilidade)']*100:.2f}% | F1: {m['F1-Score']*100:.2f}%",
+        fontsize=11
+    )
+    ax.set_xlabel('Classe Predita')
+    ax.set_ylabel('Classe Real')
+
+plt.suptitle('Validação Cruzada (10-Fold) - Detecção de Quedas (SisFall)', fontsize=14, fontweight='bold')
+plt.tight_layout()
+plt.savefig('comparativo_modelos_ml_M7_M8.png', dpi=300, bbox_inches='tight')
+print("\nGráfico salvo como 'comparativo_modelos_ml_M7_M8.png'!")
+
