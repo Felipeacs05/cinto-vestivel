@@ -63,3 +63,67 @@ def extrair_features_janela(x_w, y_w, z_w, svm_w):
     svm_std = float(np.std(svm_w))
     svm_var = float(np.var(svm_w))
     svm_max = float(np.max(svm_w))
+    svm_min = float(np.min(svm_w))
+    svm_ptp = svm_max - svm_min
+    svm_energy = float(np.mean(svm_w ** 2))
+    svm_skew = float(skew(svm_w)) if svm_std > 1e-6 else 0.0
+    svm_kurt = float(kurtosis(svm_w)) if svm_std > 1e-6 else 0.0
+
+    x_std, y_std, z_std = float(np.std(x_w)), float(np.std(y_w)), float(np.std(z_w))
+    x_var, y_var, z_var = float(np.var(x_w)), float(np.var(y_w)), float(np.var(z_w))
+    sma = float(np.mean(np.abs(x_w) + np.abs(y_w) + np.abs(z_w)))
+
+    return {
+        'SVM_Mean': svm_mean, 'SVM_Std': svm_std, 'SVM_Var': svm_var,
+        'SVM_Max': svm_max, 'SVM_Min': svm_min, 'SVM_PtP': svm_ptp,
+        'SVM_Energy': svm_energy, 'SVM_Skew': svm_skew, 'SVM_Kurt': svm_kurt,
+        'X_Std': x_std, 'Y_Std': y_std, 'Z_Std': z_std,
+        'X_Var': x_var, 'Y_Var': y_var, 'Z_Var': z_var, 'SMA': sma
+    }
+
+modelos = {
+    'SVM (RBF)': Pipeline([
+        ('scaler', StandardScaler()),
+        ('clf', SVC(kernel='rbf', C=10.0, gamma='scale', random_state=42))
+    ]),
+    'Random Forest': RandomForestClassifier(
+        n_estimators=100, max_depth=12, random_state=42, n_jobs=-1
+    )
+}
+```
+
+---
+
+## 3 ANÁLISE DE IMPORTÂNCIA DAS CARACTERÍSTICAS
+
+A partir do ajuste do classificador **Random Forest** sobre a matriz de características (`4.505 janelas`, sendo `2.707 ADLs` e `1.798 Quedas`), avaliou-se o ganho de pureza de Gini proporcionado por cada variável, conforme ilustrado na Figura 1.
+
+![Figura 1 — Importância relativa das 16 características extraídas segundo o critério de Gini (Random Forest).](importancia_features_M7.png)  
+**Figura 1 —** Ranking de importância relativa das características extraídas em janelas de $2,0\text{ s}$. **Fonte:** Elaborado pelo autor (2026).
+
+**Quadro 1 — Contribuição percentual das principais características na discriminação entre Quedas e ADLs.**
+
+| Posição | Característica | Símbolo Matemático | Importância Relativa (%) | Interpretação Física e Biomecânica |
+| :---: | :--- | :---: | :---: | :--- |
+| **1º** | `SVM_Max` | $\max(s_i)$ | $15,22\%$ | Intensidade máxima da desaceleração no choque com o solo |
+| **2º** | `SVM_PtP` | $\text{SVM}_{\max} - \text{SVM}_{\min}$ | $13,87\%$ | Excursão total entre o alívio de queda livre e o pico de colisão |
+| **3º** | `SVM_Skew` | $\gamma_1$ | $12,89\%$ | Assimetria impulsiva causada pelo pico isolado seguido de repouso |
+| **4º** | `SVM_Kurt` | $\gamma_2$ | $8,81\%$ | Concentração leptocúrtica da onda de choque na janela de $2,0\text{ s}$ |
+| **5º** | `SVM_Var` / `SVM_Std` | $\sigma^2_{\text{SVM}}, \sigma_{\text{SVM}}$ | $15,03\%$ (soma) | Energia de dispersão global do evento transitório |
+| **6º** | Variâncias e Desvios Triaxiais | $\sigma^2_Z, \sigma^2_X, \sigma_Z, \sigma_X, \sigma^2_Y, \sigma_Y$ | $31,79\%$ (soma) | Mudança de orientação postural do tronco em relação à gravidade |
+
+**Fonte:** Dados da pesquisa (2026).
+
+Os resultados do Quadro 1 confirmam por que o limiar fixo isolado falha e o modelo supervisionado obtém êxito: embora `SVM_Max` responda por $15,22\%$ da decisão, **mais de $84\%$ do poder discriminativo provém da combinação de descritores morfológicos** (`SVM_PtP`, `SVM_Skew`, `SVM_Kurt`) e **posturais triaxiais** (variâncias nos eixos X, Y e Z), os quais diferenciam um impacto seguido de queda no chão de um salto ou corrida em que o indivíduo permanece em pé.
+
+---
+
+## REFERÊNCIAS
+
+BOURKE, A. K.; O'BRIEN, J. V.; LYONS, G. M. Evaluation of a threshold-based tri-axial accelerometer fall detection algorithm. **Gait & Posture**, v. 26, n. 2, p. 194-199, 2007.
+
+IGUAL, R.; MEDRANO, C.; PLAZA, I. Challenges, issues and trends in fall detection systems. **BioMedical Engineering OnLine**, v. 12, n. 1, p. 66, 2013.
+
+PEDREGOSA, F. *et al.* Scikit-learn: Machine Learning in Python. **Journal of Machine Learning Research**, v. 12, p. 2825-2830, 2011.
+
+SUCERQUIA, A.; LÓPEZ, J. D.; VARGAS-BONILLA, J. F. SisFall: A Fall and Movement Dataset. **Sensors**, v. 17, n. 1, p. 198, 2017.
