@@ -47,3 +47,43 @@ modelos = {
         ('clf', SVC(kernel='rbf', C=10.0, gamma='scale', random_state=42))
     ]),
     'Random Forest': RandomForestClassifier(
+        n_estimators=100, max_depth=12, random_state=42, n_jobs=-1
+    )
+}
+
+resultados_cv = {}
+predicoes_globais = {}
+
+for nome, modelo in modelos.items():
+    cv_res = cross_validate(
+        modelo, X, y, cv=skf,
+        scoring=['accuracy', 'precision', 'recall', 'f1'],
+        n_jobs=-1
+    )
+    y_pred = cross_val_predict(modelo, X, y, cv=skf, n_jobs=-1)
+    predicoes_globais[nome] = y_pred
+    resultados_cv[nome] = cv_res
+
+    print(f"--- {nome} (10-Fold Stratified Cross-Validation) ---")
+    print(f"Acurácia:               {accuracy_score(y, y_pred)*100:.2f}% (± {cv_res['test_accuracy'].std()*100:.2f}%)")
+    print(f"Precisão:               {precision_score(y, y_pred)*100:.2f}% (± {cv_res['test_precision'].std()*100:.2f}%)")
+    print(f"Recall (Sensibilidade): {recall_score(y, y_pred)*100:.2f}% (± {cv_res['test_recall'].std()*100:.2f}%)")
+    print(f"F1-Score:               {f1_score(y, y_pred)*100:.2f}% (± {cv_res['test_f1'].std()*100:.2f}%)")
+    print("Matriz de Confusão Acumulada:")
+    print(confusion_matrix(y, y_pred))
+    print()
+
+folds = np.arange(1, 11)
+df_relatorio = pd.DataFrame({
+    'Fold': folds,
+    'SVM_Accuracy': np.round(resultados_cv['SVM (RBF)']['test_accuracy'] * 100, 2),
+    'SVM_Precision': np.round(resultados_cv['SVM (RBF)']['test_precision'] * 100, 2),
+    'SVM_Recall': np.round(resultados_cv['SVM (RBF)']['test_recall'] * 100, 2),
+    'SVM_F1': np.round(resultados_cv['SVM (RBF)']['test_f1'] * 100, 2),
+    'RF_Accuracy': np.round(resultados_cv['Random Forest']['test_accuracy'] * 100, 2),
+    'RF_Precision': np.round(resultados_cv['Random Forest']['test_precision'] * 100, 2),
+    'RF_Recall': np.round(resultados_cv['Random Forest']['test_recall'] * 100, 2),
+    'RF_F1': np.round(resultados_cv['Random Forest']['test_f1'] * 100, 2),
+})
+df_relatorio.to_csv('metricas_10fold_M8.csv', index=False)
+print("Tabela de métricas por partição salva em 'metricas_10fold_M8.csv'.")
