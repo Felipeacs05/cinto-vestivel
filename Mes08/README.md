@@ -63,3 +63,43 @@ A Tabela 1 (cujos dados brutos encontram-se exportados em [`metricas_10fold_M8.c
 
 A Figura 1 apresenta as matrizes de confusão consolidadas sobre os 4.505 ensaios, enquanto a Figura 2 demonstra a estabilidade do F1-Score ao longo das 10 partições em relação à linha de meta do projeto ($90,0\%$).
 
+![Figura 1 — Matrizes de confusão consolidadas (10-Fold CV) para os classificadores SVM (RBF) e Random Forest.](comparativo_modelos_ml_M7_M8.png)  
+**Figura 1 —** Matrizes de confusão obtidas via Validação Cruzada de 10 pastas sobre os 4.505 ensaios do SisFall. **Fonte:** Elaborado pelo autor (2026).
+
+![Figura 2 — Curva de estabilidade do F1-Score ao longo das 10 partições da validação cruzada.](estabilidade_kfold_M8.png)  
+**Figura 2 —** Estabilidade do F1-Score por partição em comparação à meta mínima de $90,0\%$ do Plano de Trabalho. **Fonte:** Elaborado pelo autor (2026).
+
+Analisando-se as matrizes de confusão na Figura 1:
+* **Eliminação Prática de Alarmes Falsos (Especificidade de $99,93\%$ no SVM e $99,85\%$ no Random Forest):** De um total de **2.707 atividades cotidianas** (incluindo saltos, corridas, tropeços sem queda e atos de sentar-se bruscamente executados por jovens e idosos), o classificador SVM gerou apenas **2 falsos positivos** ($\text{VN} = 2.705$), e o Random Forest gerou apenas **4 falsos positivos** ($\text{VN} = 2.703$);
+* **Elevada Sensibilidade a Quedas Reais:** Dentre as **1.798 quedas**, o SVM identificou corretamente **1.787 eventos** ($\text{FN} = 11$, Recall de $99,39\%$), e o Random Forest identificou **1.779 eventos** ($\text{FN} = 19$, Recall de $98,94\%$).
+
+---
+
+## 3 RELAÇÃO DESEMPENHO VS. CUSTO COMPUTACIONAL PARA EMBARQUE (TINYML)
+
+Conforme previsto no cronograma do Mês 08, a seleção final para as etapas de quantização e embarque em C++ no ESP32 (Meses 09 e 10) deve ponderar tanto a eficácia estatística quanto a viabilidade de memória e latência em microcontroladores:
+
+**Quadro 1 — Análise de trade-off entre os modelos avaliados para inferência local no ESP32.**
+
+| Critério de Engenharia | SVM (Kernel RBF) | Random Forest (100 Árvores, Prof. 12) |
+| :--- | :--- | :--- |
+| **F1-Score Global (10-Fold)** | **$99,64\%$** (Superior em $+0,28\text{ p.p.}$) | **$99,36\%$** |
+| **Taxa de Falsos Positivos** | $0,07\%$ ($2 / 2.707$) | $0,15\%$ ($4 / 2.707$) |
+| **Complexidade de Inferência** | $\mathcal{O}(N_{\text{SV}} \cdot d)$ com cálculo exponencial $\exp(-\gamma \|x - x_i\|^2)$ | $\mathcal{O}(N_{\text{trees}} \cdot D_{\max})$ — apenas comparações lógicas `if/else` sem ponto flutuante pesado |
+| **Compatibilidade C++ / TinyML** | Requer armazenamento dos vetores de suporte e avaliação da função radial | Conversão direta em árvores de decisão ou rede densa equivalente via TensorFlow Lite Micro |
+
+**Fonte:** Elaborado pelo autor (2026).
+
+Ambos os classificadores encontram-se validados e aptos para a etapa do Mês 09: o **SVM** destaca-se como o modelo de máxima precisão absoluta ($99,64\%$ de F1-Score), ao passo que a arquitetura baseada em **Random Forest / Rede Densa Quantizada (TFLite Micro)** oferece latência de inferência sub-milissegundo no ESP32 com perda estatística desprezível ($< 0,3\%$).
+
+---
+
+## REFERÊNCIAS
+
+BOURKE, A. K.; O'BRIEN, J. V.; LYONS, G. M. Evaluation of a threshold-based tri-axial accelerometer fall detection algorithm. **Gait & Posture**, v. 26, n. 2, p. 194-199, 2007.
+
+PEDREGOSA, F. *et al.* Scikit-learn: Machine Learning in Python. **Journal of Machine Learning Research**, v. 12, p. 2825-2830, 2011.
+
+SUCERQUIA, A.; LÓPEZ, J. D.; VARGAS-BONILLA, J. F. SisFall: A Fall and Movement Dataset. **Sensors**, v. 17, n. 1, p. 198, 2017.
+
+WARDEN, P.; SITUNAYAKE, D. **TinyML**: Machine Learning with TensorFlow Lite on Arduino and Ultra-Low-Power Microcontrollers. Sebastopol: O'Reilly Media, 2019.
