@@ -36,3 +36,20 @@ A organização do repositório acompanha rigorosamente o Cronograma de Execuç�
 
 ---
 
+## SÍNTESE DOS RESULTADOS ALCANÇADOS ATÉ O MÊS 08
+
+| Classificador Supervisionado | Acurácia (10-Fold) | Precisão | Recall (Sensibilidade) | F1-Score | Falsos Positivos (em 2.707 ADLs) |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **SVM (Kernel RBF, $C=10$)** | **$99,71\%$** | **$99,89\%$** | **$99,39\%$** | **$99,64\%$** | $2$ ($0,07\%$) |
+| **Random Forest ($100\text{ árvores}$)** | **$99,49\%$** | **$99,78\%$** | **$98,94\%$** | **$99,36\%$** | $4$ ($0,15\%$) |
+
+---
+
+## REFERÊNCIAS PRINCIPAIS
+
+* BOURKE, A. K.; O'BRIEN, J. V.; LYONS, G. M. Evaluation of a threshold-based tri-axial accelerometer fall detection algorithm. **Gait & Posture**, v. 26, n. 2, p. 194-199, 2007.
+* CASILARI, E.; SANTOYO-RAMÓN, J. A.; CANO-GARCÍA, J. M. UMAFall: A Multisensor Dataset for the Research on Automatic Fall Detection. **Procedia Computer Science**, v. 110, p. 32-39, 2017.
+* OPPENHEIM, A. V.; SCHAFER, R. W. **Discrete-Time Signal Processing**. 3. ed. Upper Saddle River: Pearson, 2009.
+* SUCERQUIA, A.; LÓPEZ, J. D.; VARGAS-BONILLA, J. F. SisFall: A Fall and Movement Dataset. **Sensors**, v. 17, n. 1, p. 198, 2017.
+* WARDEN, P.; SITUNAYAKE, D. **TinyML**: Machine Learning with TensorFlow Lite on Arduino and Ultra-Low-Power Microcontrollers. Sebastopol: O'Reilly Media, 2019.
+* WINTER, D. A. **Biomechanics and Motor Control of Human Movement**. 4. ed. Hoboken: John Wiley & Sons, 2009.
