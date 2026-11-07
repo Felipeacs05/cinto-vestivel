@@ -18,7 +18,7 @@ corte_normalizado = frequencia_corte / (0.5 * frequencia_amostragem)
 b, a = butter(ordem_filtro, corte_normalizado, btype='low', analog=False)
 
 # 2. DIRETÓRIO DO DATASET E ARQUIVO DE SAÍDA
-dataset_dir = 'SisFall_dataset'
+dataset_dir = 'SisFall_dataset' if os.path.exists('SisFall_dataset') else os.path.join('..', 'SisFall_dataset')
 arquivo_saida = 'dataset_sisfall_unificado.csv'
 if os.path.exists(arquivo_saida):
     os.remove(arquivo_saida)

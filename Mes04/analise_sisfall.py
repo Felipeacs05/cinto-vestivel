@@ -4,6 +4,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 def carregar_arquivo_sisfall(caminho_arquivo):
+    # Resolve automaticamente o caminho caso o script seja executado de dentro da pasta Mes04
+    if not os.path.exists(caminho_arquivo):
+        caminho_pai = os.path.join('..', caminho_arquivo)
+        if os.path.exists(caminho_pai):
+            caminho_arquivo = caminho_pai
+
     # Alterna automaticamente entre .txt e .csv caso um deles não exista no caminho informado
     if not os.path.exists(caminho_arquivo):
         base, ext = os.path.splitext(caminho_arquivo)

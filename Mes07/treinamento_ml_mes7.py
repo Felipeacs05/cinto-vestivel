@@ -34,7 +34,7 @@ JANELA_AMOSTRAS = 400           # Janela de 2.0 segundos (400 amostras a 200 Hz)
 PASSO_ADL = 400                 # Passo de 2.0s nas ADLs para balanceamento e eficiência
 
 b, a = butter(ORDEM, FC / (0.5 * FS), btype='low', analog=False)
-dataset_dir = 'SisFall_dataset'
+dataset_dir = 'SisFall_dataset' if os.path.exists('SisFall_dataset') else os.path.join('..', 'SisFall_dataset')
 
 # Mapeamento híbrido (.txt e .csv), priorizando .txt quando ambos existirem
 mapa_arquivos = {}
@@ -156,7 +156,6 @@ for idx, caminho in enumerate(lista_caminhos, 1):
         registros_features.append(feats)
     else:
         # Em arquivos de Atividades Diárias (D), extrai a janela de maior excitação dinâmica (hard negative)
-        # e uma janela de regime estacionário para representar fielmente ADLs intensas e moderadas
         idx_pico = int(np.argmax(svm_f))
         inicio_pico = max(0, min(idx_pico - JANELA_AMOSTRAS // 2, len(svm_f) - JANELA_AMOSTRAS))
         fim_pico = inicio_pico + JANELA_AMOSTRAS
@@ -247,4 +246,3 @@ plt.suptitle('Validação Cruzada (10-Fold) - Detecção de Quedas (SisFall)', f
 plt.tight_layout()
 plt.savefig('comparativo_modelos_ml_M7_M8.png', dpi=300, bbox_inches='tight')
 print("\nGráfico salvo como 'comparativo_modelos_ml_M7_M8.png'!")
-
