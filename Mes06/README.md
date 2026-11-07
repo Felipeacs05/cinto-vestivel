@@ -12,58 +12,105 @@
 
 # RELATÓRIO TÉCNICO PARCIAL — MÊS 06
 **Período de Referência:** Mês 06 do Cronograma de Execução  
-**Etapa:** Testes de Bancada do Hardware (ESP32 + MPU-9250) e Validação da Transmissão de Picos Inerciais ao Firebase  
-**Artefatos Associados:** [`teste_bancada_firebase.ino`](teste_bancada_firebase.ino), [`validacao_bancada_M6.png`](validacao_bancada_M6.png)
+**Etapa:** Preparação e Protocolo para Testes de Bancada do Hardware (ESP32 + MPU-9250) com Detector de Pico Digital e Integrador Temporal  
+**Artefato Associado:** [`teste_bancada_firebase.ino`](teste_bancada_firebase.ino)
 
 ---
 
 ## RESUMO
 
-Este relatório apresenta os procedimentos experimentais e os resultados obtidos durante o sexto mês de execução do plano de trabalho, dedicado à validação sistêmica de bancada do protótipo físico (ESP32 + MPU-9250). Em estrita observância às diretrizes metodológicas do projeto — que dispensam testes *in vivo* com seres humanos neste primeiro ciclo de 12 meses —, o dispositivo foi submetido a ensaios controlados de excitação mecânica manual, abrangendo estados de repouso estacionário, oscilações periódicas de baixa amplitude e impactos abruptos superiores a $3,0\text{ g}$. Os resultados confirmaram a estabilidade elétrica do barramento I2C sob acelerações intensas e a integridade da persistência assíncrona dos picos inerciais no Google Firebase Realtime Database.
+Este documento descreve a preparação de engenharia, a instrumentação de *firmware* e o protocolo experimental referentes ao sexto mês do cronograma de execução, destinado aos testes físicos de bancada do protótipo (ESP32 + MPU-9250) para validação da comunicação sem fio e do envio de picos inerciais ao Google Firebase Realtime Database. A fim de garantir que impactos transitórios rápidos (cuja duração física situa-se entre $10\text{ ms}$ e $50\text{ ms}$) não sejam perdidos no intervalo entre envios de rede ($5.000\text{ ms}$), implementou-se no *firmware* [`teste_bancada_firebase.ino`](teste_bancada_firebase.ino) uma arquitetura combinada de amostragem a $50\text{ Hz}$ com **Detector de Pico Digital (*Peak-Hold*)** e **Integrador Discreto de Janela (Média Móvel Acumulada)**, além do filtro passa-baixa digital interno (DLPF) do conversor ADC Sigma-Delta de 16 bits do MPU-9250.
 
-**Palavras-chave:** Validação de Bancada. Sistemas Embarcados. ESP32. MPU-9250. Firebase Realtime Database.
-
----
-
-## 1 METODOLOGIA DE ENSAIO EM BANCADA
-
-Conforme estabelecido no terceiro Objetivo Específico e na Seção 4 (Materiais e Métodos) do Plano de Trabalho, a validação de hardware nesta fase prescinde de voluntários humanos, concentrando-se na comprovação da fidelidade da amostragem inercial e da robustez da pilha de rede sem fio sob condições controladas de laboratório.
-
-O protocolo experimental de bancada foi dividido em três regimes cinemáticos executados ao longo de janelas de $20\text{ segundos}$:
-1. **Regime Estacionário Basal ($0,0\text{ s}$ a $1,5\text{ s}$):** Protótipo mantido imóvel sobre a superfície da bancada para verificação do nível de referência gravitacional ($\text{SVM} \approx 1,00\text{ g}$) e aferição do piso de ruído branco;
-2. **Regime Oscilatório Moderado ($1,5\text{ s}$ a $4,0\text{ s}$):** Movimentação cíclica manual de baixa frequência ($\approx 1,8\text{ Hz}$), reproduzindo a faixa de excitação típica da locomoção humana ($0,7\text{ g}$ a $1,4\text{ g}$);
-3. **Regime de Excitação Aguda de Impacto ($t_1 = 5,6\text{ s}$, $t_2 = 11,3\text{ s}$ e $t_3 = 16,5\text{ s}$):** Descida livre rápida seguida de parada mecânica abrupta sobre anteparo amortecido na bancada, gerando vales de queda livre ($\text{SVM} < 0,40\text{ g}$) imediatamente seguidos por picos inerciais superiores ao limiar de referência de $3,0\text{ g}$.
+**Palavras-chave:** Validação de Bancada. Detector de Pico Digital. Circuito Integrador Discreto. ESP32. Firebase RTDB.
 
 ---
 
-## 2 ANÁLISE DOS RESULTADOS DE AQUISIÇÃO E TELEMETRIA
+## 1 FUNDAMENTAÇÃO DE INSTRUMENTAÇÃO: DETECÇÃO E RETENÇÃO DE PICOS INERCIAIS
 
-A Figura 1 ilustra o comportamento temporal do Vetor de Soma da Magnitude ($\text{SVM}$) capturado pelo conjunto ESP32 + MPU-9250 durante a bateria de testes de bancada, destacando os três eventos de impacto induzidos manualmente e sincronizados com o nó `Sensores/Inercial/SVM` no Firebase Realtime Database.
+Um evento de impacto mecânico caracteriza-se por um pulso estreito de alta amplitude no domínio do tempo. Quando o sistema de transmissão para a nuvem opera em intervalos periódicos (ex.: a cada $5\text{ segundos}$ para evitar bloqueio da CPU pelo *handshake* TLS/HTTPS), a simples transmissão da última leitura instantânea (`ultimoSVM`) ocasionaria a perda de picos ocorridos no interior da janela entre envios.
 
-![Figura 1 — Ensaio de validação de bancada do conjunto ESP32 + MPU-9250 e registro de picos no Firebase RTDB.](validacao_bancada_M6.png)  
-**Figura 1 —** Perfil temporal do vetor resultante SVM durante os testes de bancada do Mês 06, evidenciando os picos de impacto ($4,85\text{ g}$, $6,12\text{ g}$ e $5,40\text{ g}$) transmitidos ao Firebase RTDB. **Fonte:** Elaborado pelo autor (2026).
+Para solucionar esse problema clássico de instrumentação eletrônica, o subsistema desenvolvido no Mês 06 atua em três camadas complementares:
 
-**Quadro 1 — Síntese dos parâmetros aferidos durante os testes de bancada do Mês 06.**
-
-| Evento Experimental | Instante ($t$) | Vale Pré-Impacto ($\text{SVM}_{\min}$) | Pico Máximo ($\text{SVM}_{\max}$) | Status da Transmissão Firebase RTDB |
-| :--- | :---: | :---: | :---: | :--- |
-| **Repouso em Bancada** | $0,0\text{ s} - 1,5\text{ s}$ | $0,96\text{ g}$ | $1,04\text{ g}$ | Sincronizado (`HTTP 200 OK`) |
-| **Oscilação Manual Leve** | $1,5\text{ s} - 4,0\text{ s}$ | $0,68\text{ g}$ | $1,36\text{ g}$ | Sincronizado (`HTTP 200 OK`) |
-| **Impacto Mecânico #1** | $5,6\text{ s}$ | $0,29\text{ g}$ | $4,85\text{ g}$ | Sincronizado (`HTTP 200 OK`) |
-| **Impacto Mecânico #2** | $11,3\text{ s}$ | $0,25\text{ g}$ | $6,12\text{ g}$ | Sincronizado (`HTTP 200 OK`) |
-| **Impacto Mecânico #3** | $16,5\text{ s}$ | $0,31\text{ g}$ | $5,40\text{ g}$ | Sincronizado (`HTTP 200 OK`) |
-
-**Fonte:** Dados da pesquisa (2026).
-
-### 2.1 Avaliação da Estabilidade Elétrica e de Rede
-
-Durante as manobras de agitação vigorosa, verificou-se a ausência de travamentos (*bus lock-up*) no barramento I2C (pinos `GPIO 8` e `GPIO 9`), validando a eficácia do *timeout* de hardware (`Wire.setTimeOut(3000)`) configurado no firmware ([`teste_bancada_firebase.ino`](teste_bancada_firebase.ino)). A resposta morfológica do sensor MPU-9250 reproduziu com fidelidade a transição entre alívio gravitacional ($\text{SVM} < 1,0\text{ g}$) e pico impulsivo ($> 4,8\text{ g}$), demonstrando compatibilidade física direta com os perfis do dataset SisFall analisados nos Meses 04 e 05.
+1. **Conversão ADC Rápida e Filtragem Integradora em Hardware (MPU-9250):** Os conversores analógico-digitais Sigma-Delta de 16 bits internos do MPU-9250 amostram as estruturas MEMS em alta velocidade ($1\text{ kHz}$) e submetem o sinal ao *Digital Low-Pass Filter* (DLPF) interno do chip (INVENSENSE, 2026). Fisicamente, o DLPF opera como um **circuito integrador passa-baixa**, suavizando ruídos térmicos e alargando temporalmente os pulsos de impacto antes da leitura via barramento I2C;
+2. **Detector de Pico Digital (*Software Peak-Hold*) no ESP32:** O microcontrolador consulta o sensor a uma taxa de $50\text{ Hz}$ (a cada $20\text{ ms}$, conforme estipulado na Etapa 2 de Materiais e Métodos do Plano de Trabalho). A cada amostra $s_k$, o algoritmo retém em memória o valor máximo (`picoMaximoSVM`) e o valor mínimo de queda livre (`valeMinimoSVM`) registrados desde o último envio à nuvem:
+   $$\text{SVM}_{\text{Pico}} = \max_{1 \le k \le M} (s_k), \quad \text{SVM}_{\text{Vale}} = \min_{1 \le k \le M} (s_k)$$
+3. **Integrador Numérico na Janela Temporal:** Simultaneamente, acumula-se a soma discreta das $M$ amostras colhidas na janela para extrair a energia média integrada do período ($\overline{\text{SVM}} = \frac{1}{M}\sum_{k=1}^{M} s_k$). Ao término do temporizador de $5\text{ s}$, o pacote JSON completo é despachado ao Firebase e os registradores de retenção são reiniciados para o ciclo seguinte.
 
 ---
 
-## 3 CONCLUSÃO DA ETAPA
+## 2 FIRMWARE DE TESTE DE BANCADA (`teste_bancada_firebase.ino`)
 
-Os testes de bancada do Mês 06 atestaram a prontidão operacional do protótipo físico e da comunicação com a nuvem Firebase. Com o subsistema de hardware e o dataset unificado devidamente validados, o projeto avançou para a modelagem estatística e o treinamento dos algoritmos de aprendizado de máquina supervisionado no Mês 07.
+A Listagem 1 apresenta o núcleo do código-fonte preparado em [`teste_bancada_firebase.ino`](teste_bancada_firebase.ino) para execução dos ensaios físicos de bancada.
+
+### Listagem 1 — Rotina de Amostragem a 50 Hz com Detector de Pico (*Peak-Hold*) e Integrador (`teste_bancada_firebase.ino`)
+
+```cpp
+void loop() {
+  // 1. AMOSTRAGEM RÁPIDA (50 Hz / a cada 20 ms) COM DETECTOR DE PICO E INTEGRADOR
+  if (mpu.readByte(MPU9250_ADDRESS_AD0, INT_STATUS) & 0x01) {
+    mpu.readAccelData(mpu.accelCount);
+    
+    mpu.ax = (float)mpu.accelCount[0] * mpu.aRes;
+    mpu.ay = (float)mpu.accelCount[1] * mpu.aRes;
+    mpu.az = (float)mpu.accelCount[2] * mpu.aRes;
+
+    ultimoSVM = sqrt(sq(mpu.ax) + sq(mpu.ay) + sq(mpu.az));
+
+    // Detector de Pico Digital (Peak-Hold): retém o maior impacto ocorrido na janela
+    if (ultimoSVM > picoMaximoSVM) {
+      picoMaximoSVM = ultimoSVM;
+    }
+    // Detector de Vale (Queda Livre): retém o menor valor ocorrido na janela
+    if (ultimoSVM < valeMinimoSVM) {
+      valeMinimoSVM = ultimoSVM;
+    }
+    // Acumulador Integrador para cálculo da média da janela
+    somaIntegradoraSVM += ultimoSVM;
+    contadorAmostras++;
+  }
+  
+  // 2. ROTINA DE ENVIO PERIÓDICO PARA O FIREBASE (Descarrega o Pico Retido e reinicia a janela)
+  if (Firebase.ready() && (millis() - sendDataPrevMillis > timerDelay || sendDataPrevMillis == 0)) {
+    sendDataPrevMillis = millis();
+
+    float mediaIntegradaSVM = (contadorAmostras > 0) ? (somaIntegradoraSVM / contadorAmostras) : ultimoSVM;
+    float picoParaEnvio = (contadorAmostras > 0) ? picoMaximoSVM : ultimoSVM;
+
+    FirebaseJson json;
+    json.set("SVM_Instantaneo", ultimoSVM);
+    json.set("SVM_Pico_Janela", picoParaEnvio);
+    json.set("SVM_Media_Integrada", mediaIntegradaSVM);
+    json.set("SVM_Vale_Minimo", (contadorAmostras > 0) ? valeMinimoSVM : ultimoSVM);
+    json.set("Amostras_Janela", contadorAmostras);
+
+    Firebase.RTDB.setJSON(&fbdo, "Sensores/Inercial", &json);
+
+    // Reinicia o Detector de Pico e o Integrador para a próxima janela
+    picoMaximoSVM = 0.0;
+    valeMinimoSVM = 99.0;
+    somaIntegradoraSVM = 0.0;
+    contadorAmostras = 0;
+  }
+  delay(20); // 50 Hz
+}
+```
+
+---
+
+## 3 PROTOCOLO DE EXECUÇÃO E EXPORTAÇÃO DE DADOS DO FIREBASE
+
+Conforme definido na Seção 4 do Plano de Trabalho, os testes de bancada do Mês 06 destinam-se exclusivamente à validação sistêmica do hardware físico e da comunicação com a nuvem (enquanto o treinamento dos algoritmos de Machine Learning nos Meses 07 e 08 utiliza integralmente os datasets científicos públicos SisFall/UMAFall).
+
+**Quadro 1 — Roteiro de ensaio em bancada para coleta e exportação no Firebase RTDB.**
+
+| Etapa do Ensaio | Procedimento Mecânico Manual | Variável Alvo no Firebase (`Sensores/Inercial`) | Critério de Aceitação |
+| :--- | :--- | :--- | :--- |
+| **1. Linha de Base Estática** | Manter a protoboard em repouso sobre a bancada por $15\text{ s}$ | `SVM_Media_Integrada` e `SVM_Pico_Janela` | Convergência em $1,00\text{ g} \pm 0,05\text{ g}$ |
+| **2. Agitação Oscilatória** | Movimentar manualmente o sensor em ciclos suaves ($1\text{ Hz}$ a $2\text{ Hz}$) | `SVM_Media_Integrada` e `SVM_Pico_Janela` | Picos moderados entre $1,2\text{ g}$ e $2,0\text{ g}$ sem erro I2C |
+| **3. Simulação de Impacto Agudo** | Movimentação vigorosa rápida seguida de parada brusca sobre anteparo macio | `SVM_Pico_Janela` e `SVM_Vale_Minimo` | Retenção de pico $> 3,0\text{ g}$ e confirmação `HTTP 200` no Firebase |
+| **4. Exportação do Log** | Exportar o nó JSON do Firebase RTDB após os testes de bancada | Arquivo `.json` / `.csv` do ensaio | Anexação dos dados reais coletados na pasta `Mes06/` |
+
+**Fonte:** Elaborado pelo autor (2026).
 
 ---
 
@@ -71,8 +118,8 @@ Os testes de bancada do Mês 06 atestaram a prontidão operacional do protótipo
 
 BOURKE, A. K.; O'BRIEN, J. V.; LYONS, G. M. Evaluation of a threshold-based tri-axial accelerometer fall detection algorithm. **Gait & Posture**, v. 26, n. 2, p. 194-199, 2007.
 
-ESPRESSIF SYSTEMS. **ESP32 Series Datasheet**. Xangai: Espressif Systems, 2026. Disponível em: https://docs.espressif.com. Acesso em: 12 out. 2026.
+ESPRESSIF SYSTEMS. **ESP32 Series Datasheet**. Xangai: Espressif Systems, 2026. Disponível em: https://docs.espressif.com. Acesso em: 20 out. 2026.
 
-GOOGLE. **Firebase Realtime Database Documentation**. Mountain View: Google LLC, 2026. Disponível em: https://firebase.google.com/docs/database. Acesso em: 12 out. 2026.
+GOOGLE. **Firebase Realtime Database Documentation**. Mountain View: Google LLC, 2026. Disponível em: https://firebase.google.com/docs/database. Acesso em: 20 out. 2026.
 
-INVENSENSE. **MPU-9250 Product Specification Revision 1.1**. San Jose: TDK InvenSense, 2026. Disponível em: https://invensense.tdk.com. Acesso em: 12 out. 2026.
+INVENSENSE. **MPU-9250 Product Specification Revision 1.1**. San Jose: TDK InvenSense, 2026. Disponível em: https://invensense.tdk.com. Acesso em: 20 out. 2026.
