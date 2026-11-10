@@ -30,9 +30,25 @@ A organização do repositório acompanha rigorosamente o Cronograma de Execuç�
 | [**`Mes03/`**](Mes03/README.md) | 3º Mês | Conectividade Wi-Fi e Integração com Firebase RTDB | [`Mes03/firmware_wifi_firebase.ino`](Mes03/firmware_wifi_firebase.ino), [`Mes03/README.md`](Mes03/README.md) — Envio periódico não bloqueante para `Sensores/Inercial/SVM`. |
 | [**`Mes04/`**](Mes04/README.md) | 4º Mês | Download, Estruturação e Análise Exploratória (SisFall) | [`Mes04/baixar_sisfall.py`](Mes04/baixar_sisfall.py), [`Mes04/analise_sisfall.py`](Mes04/analise_sisfall.py), gráficos [`D01_SA01`](Mes04/exploratoria_D01_SA01_R01.png), [`F01_SA01`](Mes04/exploratoria_F01_SA01_R01.png) e [`D01_SE01`](Mes04/exploratoria_D01_SE01_R01.png). |
 | [**`Mes05/`**](Mes05/README.md) | 5º Mês | Filtro Digital Butterworth (4ª Ordem, 5 Hz) e Unificação | [`Mes05/filtro_mes5.py`](Mes05/filtro_mes5.py), [`Mes05/unificador_sisfall.py`](Mes05/unificador_sisfall.py), [`comparativo_butterworth_M5.png`](Mes05/comparativo_butterworth_M5.png) ($4.505\text{ ensaios}$, $15,85\text{ milhões}$ de amostras). |
-| [**`Mes06/`**](Mes06/README.md) | 6º Mês | Firmware e Protocolo de Bancada (Detector de Pico + Integrador) | [`Mes06/teste_bancada_firebase.ino`](Mes06/teste_bancada_firebase.ino), [`Mes06/README.md`](Mes06/README.md) — Amostragem a $50\text{ Hz}$ com retenção de pico (*Peak-Hold*) e média integrada para coleta no Firebase. |
+| [**`Mes06/`**](Mes06/README.md) | 6º Mês | Validação Físico-Experimental de Bancada (ESP32 + MPU-9250) | [`Mes06/teste_bancada_firebase/`](Mes06/teste_bancada_firebase/), [`dados_esp32_completos.csv`](Mes06/dados_esp32_completos.csv), [`validacao_bancada_M6.png`](Mes06/validacao_bancada_M6.png) — Coleta empírica de $5.283$ amostras a $50\text{ Hz}$ em 24 lotes no Firebase RTDB, caracterização dos 4 regimes dinâmicos e validação do hardware. |
 | [**`Mes07/`**](Mes07/README.md) | 7º Mês | Extração de Características em Janelas e Treinamento ML | [`Mes07/treinamento_ml_mes7.py`](Mes07/treinamento_ml_mes7.py), [`Mes07/features_sisfall_janelas.csv`](Mes07/features_sisfall_janelas.csv), [`Mes07/importancia_features_M7.png`](Mes07/importancia_features_M7.png). |
 | [**`Mes08/`**](Mes08/README.md) | 8º Mês | Validação Cruzada (10-Fold) e Seleção do Modelo TinyML | [`Mes08/validacao_kfold_mes8.py`](Mes08/validacao_kfold_mes8.py), [`Mes08/metricas_10fold_M8.csv`](Mes08/metricas_10fold_M8.csv), [`comparativo_modelos_ml_M7_M8.png`](Mes08/comparativo_modelos_ml_M7_M8.png), [`estabilidade_kfold_M8.png`](Mes08/estabilidade_kfold_M8.png). |
+
+---
+
+## SÍNTESE DA VALIDAÇÃO EXPERIMENTAL DE BANCADA DO HARDWARE (MÊS 06)
+
+No ensaio físico do dispositivo vestível (ESP32 + MPU-9250), validou-se a cadeia completa de aquisição e telemetria através da coleta contínua de **$5.283$ amostras** a $50\text{ Hz}$ organizadas em 24 lotes no **Firebase Realtime Database** ($105,66\text{ s}$ de ensaio contínuo):
+
+| Regime Cinemático Avaliado | Intervalo ($t$) | Amostras ($N$) | $\text{SVM}_{\text{médio}} \pm \sigma$ | Mínimo | Máximo | Comportamento Observado |
+| :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| **1. Linha de Base Estática** | $0,0\text{ s} - 26,6\text{ s}$ | $1.330$ | $1,063 \pm 0,004\text{ g}$ | $1,048\text{ g}$ | $1,080\text{ g}$ | Repouso em bancada; ruído térmico reduzido ($\sigma = 0,004\text{ g}$). |
+| **2. Oscilação Suave (Caminhada)** | $26,6\text{ s} - 53,0\text{ s}$ | $1.320$ | $1,081 \pm 0,165\text{ g}$ | $0,481\text{ g}$ | $1,944\text{ g}$ | Dinâmica de marcha normal; picos $< 2,0\text{ g}$ sem falsos alarmes. |
+| **3. Movimentação Vigorosa (ADL)** | $53,0\text{ s} - 75,0\text{ s}$ | $1.100$ | $1,114 \pm 0,336\text{ g}$ | $0,266\text{ g}$ | $2,654\text{ g}$ | Excitação dinâmica intensa; picos contidos em $2,65\text{ g}$. |
+| **4. Queda e Choques Agudos** | $75,0\text{ s} - 105,7\text{ s}$ | $1.533$ | $1,139 \pm 0,422\text{ g}$ | **$0,086\text{ g}$** | **$3,464\text{ g}$** | Vales de queda livre ($< 0,5\text{ g}$) seguidos de saturação em $3,464\text{ g}$. |
+
+> [!NOTE]
+> A saturação em exatamente $3,464\text{ g}$ decorre do limite de escala configurado no hardware ($\pm 2\text{ g}$ por eixo: $\sqrt{2^2 + 2^2 + 2^2} = \sqrt{12} \approx 3,4641\text{ g}$), comprovando experimentalmente a necessidade de fundos de escala maiores ($\pm 8\text{ g}$ ou $\pm 16\text{ g}$) implementados nas bases SisFall/UMAFall.
 
 ---
 
