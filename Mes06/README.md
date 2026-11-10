@@ -15,7 +15,8 @@
 **Etapa:** Testes Físicos de Bancada do Hardware (ESP32 + MPU-9250): Movimentação Manual Vigorosa, Envio em Lotes ao Firebase RTDB e Caracterização Dinâmica dos Picos Inerciais  
 **Artefatos Associados:**
 * Código-fonte do Firmware: [`teste_bancada_firebase/teste_bancada_firebase.ino`](teste_bancada_firebase/teste_bancada_firebase.ino)
-* Script de Extração de Dados: [`extrairCsv.py`](extrairCsv.py)
+* Script de Extração e Automação: [`extrairCsv.py`](extrairCsv.py)
+* Script de Análise e Geração Automática do Gráfico: [`analise_bancada_mes6.py`](analise_bancada_mes6.py)
 * Script de Limpeza do RTDB: [`limpardb.py`](limpardb.py)
 * Base de Dados Bruta (JSON Firebase): [`esp32-inercial-default-rtdb-export.json`](esp32-inercial-default-rtdb-export.json)
 * Dataset Processado em CSV ($5.283$ amostras): [`dados_esp32_completos.csv`](dados_esp32_completos.csv)
