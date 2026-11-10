@@ -10,7 +10,7 @@
 // ==========================================
 // 1. CREDENCIAIS DE REDE E FIREBASE
 // ==========================================
-#define WIFI_SSID "LANE_ZRL2"
+#define WIFI_SSID "LENE_ZRL"
 #define WIFI_PASSWORD "65679405"
 
 #define API_KEY "AIzaSyCGICFsj_b7tEwknOjU5oOZJE_ujkGBxUA"
@@ -19,6 +19,9 @@
 // ==========================================
 // 2. OBJETOS GLOBAIS E DETECTOR DE PICO / INTEGRADOR
 // ==========================================
+#define MAX_AMOSTRAS 250
+float bufferSVM[MAX_AMOSTRAS];
+
 FirebaseData fbdo;
 FirebaseAuth auth;
 FirebaseConfig config;
@@ -61,7 +64,7 @@ void setup() {
   config.database_url = DATABASE_URL;
   config.signer.test_mode = true;
   
-  fbdo.setBSSLBufferSize(1024, 1024);
+  fbdo.setBSSLBufferSize(4096, 1024);
   fbdo.setResponseSize(1024);
 
   Firebase.begin(&config, &auth);
@@ -88,7 +91,7 @@ void setup() {
 }
 
 void loop() {
-  // 1. AMOSTRAGEM RÁPIDA (50 Hz / a cada 20 ms) COM DETECTOR DE PICO E INTEGRADOR
+  // 1. AMOSTRAGEM RÁPIDA (50 Hz / a cada 20 ms) GUARDANDO NO BUFFER
   if (mpu.readByte(MPU9250_ADDRESS_AD0, INT_STATUS) & 0x01) {
     mpu.readAccelData(mpu.accelCount);
     
@@ -98,56 +101,43 @@ void loop() {
 
     ultimoSVM = sqrt(sq(mpu.ax) + sq(mpu.ay) + sq(mpu.az));
 
-    // Detector de Pico Digital (Peak-Hold): retém o maior impacto ocorrido na janela
-    if (ultimoSVM > picoMaximoSVM) {
-      picoMaximoSVM = ultimoSVM;
+    // Guarda a amostra atual no vetor (evita estourar o limite de 250)
+    if (contadorAmostras < MAX_AMOSTRAS) {
+      bufferSVM[contadorAmostras] = ultimoSVM;
+      contadorAmostras++;
     }
-    // Detector de Vale (Queda Livre): retém o menor valor ocorrido na janela
-    if (ultimoSVM < valeMinimoSVM) {
-      valeMinimoSVM = ultimoSVM;
-    }
-    // Acumulador Integrador para cálculo da média da janela
-    somaIntegradoraSVM += ultimoSVM;
-    contadorAmostras++;
   }
   
-  // 2. ROTINA DE ENVIO PERIÓDICO PARA O FIREBASE (Descarrega o Pico Retido e reinicia a janela)
+  // 2. ENVIO DO LOTE COMPLETO A CADA 5 SEGUNDOS
   if (Firebase.ready() && (millis() - sendDataPrevMillis > timerDelay || sendDataPrevMillis == 0)) {
     sendDataPrevMillis = millis();
 
-    float mediaIntegradaSVM = (contadorAmostras > 0) ? (somaIntegradoraSVM / contadorAmostras) : ultimoSVM;
-    float picoParaEnvio = (contadorAmostras > 0) ? picoMaximoSVM : ultimoSVM;
+    if (contadorAmostras > 0) {
+      FirebaseJson json;
+      FirebaseJsonArray arr;
 
-    Serial.print("Amostras na janela: ");
-    Serial.print(contadorAmostras);
-    Serial.print(" | SVM Medio (Integrado): ");
-    Serial.print(mediaIntegradaSVM, 3);
-    Serial.print(" g | SVM Pico Retido (Peak-Hold): ");
-    Serial.print(picoParaEnvio, 3);
-    Serial.println(" g");
+      // Coloca todas as ~225 amostras dentro de um array JSON
+      for (unsigned long i = 0; i < contadorAmostras; i++) {
+        arr.add(bufferSVM[i]);
+      }
 
-    // Envia o Pico Máximo retido na janela e a Média Integrada para o Firebase RTDB
-    FirebaseJson json;
-    json.set("SVM_Instantaneo", ultimoSVM);
-    json.set("SVM_Pico_Janela", picoParaEnvio);
-    json.set("SVM_Media_Integrada", mediaIntegradaSVM);
-    json.set("SVM_Vale_Minimo", (contadorAmostras > 0) ? valeMinimoSVM : ultimoSVM);
-    json.set("Amostras_Janela", contadorAmostras);
+      json.set("SVM_Amostras", arr);
+      json.set("Total_Amostras", contadorAmostras);
 
-    if (Firebase.RTDB.setJSON(&fbdo, "Sensores/Inercial", &json)) {
-      Serial.println("-> Sucesso: Pico e Media Integrada salvos no Firebase!");
-    } else {
-      Serial.print("-> Erro no envio: ");
-      Serial.println(fbdo.errorReason());
+      // pushJSON cria um novo registro a cada 5s sem apagar o anterior
+      if (Firebase.RTDB.pushJSON(&fbdo, "Sensores/Historico", &json)) {
+        Serial.print("-> Sucesso! Lote com ");
+        Serial.print(contadorAmostras);
+        Serial.println(" amostras salvo no Firebase.");
+      } else {
+        Serial.print("-> Erro no envio: ");
+        Serial.println(fbdo.errorReason());
+      }
     }
 
-    // Reinicia o Detector de Pico e o Integrador para a próxima janela
-    picoMaximoSVM = 0.0;
-    valeMinimoSVM = 99.0;
-    somaIntegradoraSVM = 0.0;
+    // Zera o contador para começar a encher o vetor de novo
     contadorAmostras = 0;
   }
   
-  // Intervalo de 20 ms (~50 Hz conforme Plano de Trabalho)
   delay(20);
 }
