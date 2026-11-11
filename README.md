@@ -32,20 +32,26 @@ A organização do repositório acompanha rigorosamente o Cronograma de Execuç�
 | [**`Mes05/`**](Mes05/README.md) | 5º Mês | Filtro Digital Butterworth (4ª Ordem, 5 Hz) e Unificação | [`Mes05/filtro_mes5.py`](Mes05/filtro_mes5.py), [`Mes05/unificador_sisfall.py`](Mes05/unificador_sisfall.py), [`comparativo_butterworth_M5.png`](Mes05/comparativo_butterworth_M5.png) ($4.505\text{ ensaios}$, $15,85\text{ milhões}$ de amostras). |
 | [**`Mes06/`**](Mes06/README.md) | 6º Mês | Validação Físico-Experimental de Bancada (ESP32 + MPU-9250) | [`Mes06/teste_bancada_firebase/`](Mes06/teste_bancada_firebase/), [`analise_bancada_mes6.py`](Mes06/analise_bancada_mes6.py), [`dados_esp32_completos.csv`](Mes06/dados_esp32_completos.csv), [`validacao_bancada_M6.png`](Mes06/validacao_bancada_M6.png) — Coleta empírica de $5.283$ amostras a $50\text{ Hz}$ em 24 lotes no Firebase RTDB e geração automática dos gráficos. |
 | [**`Mes07/`**](Mes07/README.md) | 7º Mês | Extração de Características em Janelas e Treinamento ML | [`Mes07/treinamento_ml_mes7.py`](Mes07/treinamento_ml_mes7.py), [`Mes07/features_sisfall_janelas.csv`](Mes07/features_sisfall_janelas.csv), [`Mes07/importancia_features_M7.png`](Mes07/importancia_features_M7.png). |
-| [**`Mes08/`**](Mes08/README.md) | 8º Mês | Validação Cruzada (10-Fold) e Seleção do Modelo TinyML | [`Mes08/validacao_kfold_mes8.py`](Mes08/validacao_kfold_mes8.py), [`Mes08/metricas_10fold_M8.csv`](Mes08/metricas_10fold_M8.csv), [`comparativo_modelos_ml_M7_M8.png`](Mes08/comparativo_modelos_ml_M7_M8.png), [`estabilidade_kfold_M8.png`](Mes08/estabilidade_kfold_M8.png). |
+| [**`Mes08/`**](Mes08/README.md) | 8º Mês | Validação Cruzada (10-Fold) e Arquitetura Integrada | [`Mes08/validacao_kfold_mes8.py`](Mes08/validacao_kfold_mes8.py), [`Mes08/gerar_arquitetura.py`](Mes08/gerar_arquitetura.py), [`comparativo_modelos_ml_M7_M8.png`](Mes08/comparativo_modelos_ml_M7_M8.png), [`estabilidade_kfold_M8.png`](Mes08/estabilidade_kfold_M8.png), [`arquitetura_atual_projeto.png`](Mes08/arquitetura_atual_projeto.png). |
+
+---
+
+## ARQUITETURA ATUAL DO PROJETO (ESTADO NO MÊS 08)
+
+![Arquitetura Atual do Projeto](Mes08/arquitetura_atual_projeto.png)
 
 ---
 
 ## SÍNTESE DA VALIDAÇÃO EXPERIMENTAL DE BANCADA DO HARDWARE (MÊS 06)
 
-No ensaio físico do dispositivo vestível (ESP32 + MPU-9250), validou-se a cadeia completa de aquisição e telemetria através da coleta contínua de **$5.283$ amostras** a $50\text{ Hz}$ organizadas em 24 lotes no **Firebase Realtime Database** ($105,66\text{ s}$ de ensaio contínuo):
+No ensaio físico do dispositivo vestível (ESP32 + MPU-9250), validou-se a cadeia completa de aquisição e telemetria através da coleta contínua de **$5.283$ amostras** a $50\text{ Hz}$ organizadas em 24 lotes no **Firebase Realtime Database** ($105,64\text{ s}$ de ensaio contínuo):
 
 | Regime Cinemático Avaliado | Intervalo ($t$) | Amostras ($N$) | $\text{SVM}_{\text{médio}} \pm \sigma$ | Mínimo | Máximo | Comportamento Observado |
 | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
-| **1. Linha de Base Estática** | $0,0\text{ s} - 26,6\text{ s}$ | $1.330$ | $1,063 \pm 0,004\text{ g}$ | $1,048\text{ g}$ | $1,080\text{ g}$ | Repouso em bancada; ruído térmico reduzido ($\sigma = 0,004\text{ g}$). |
-| **2. Oscilação Suave (Caminhada)** | $26,6\text{ s} - 53,0\text{ s}$ | $1.320$ | $1,081 \pm 0,165\text{ g}$ | $0,481\text{ g}$ | $1,944\text{ g}$ | Dinâmica de marcha normal; picos $< 2,0\text{ g}$ sem falsos alarmes. |
-| **3. Movimentação Vigorosa (ADL)** | $53,0\text{ s} - 75,0\text{ s}$ | $1.100$ | $1,114 \pm 0,336\text{ g}$ | $0,266\text{ g}$ | $2,654\text{ g}$ | Excitação dinâmica intensa; picos contidos em $2,65\text{ g}$. |
-| **4. Queda e Choques Agudos** | $75,0\text{ s} - 105,7\text{ s}$ | $1.533$ | $1,139 \pm 0,422\text{ g}$ | **$0,086\text{ g}$** | **$3,464\text{ g}$** | Vales de queda livre ($< 0,5\text{ g}$) seguidos de saturação em $3,464\text{ g}$. |
+| **1. Repouso Estático (Estável)** | $4,4\text{ s} - 26,6\text{ s}$ | $1.110$ | $1,064 \pm 0,013\text{ g}$ | $0,948\text{ g}$ | $1,165\text{ g}$ | Placa parada na mesa após posicionamento inicial; linha de base em $\sim 1,06\text{ g}$. |
+| **2. Oscilação Suave (Caminhada)** | $26,6\text{ s} - 53,0\text{ s}$ | $1.320$ | $0,994 \pm 0,221\text{ g}$ | $0,286\text{ g}$ | $1,943\text{ g}$ | Dinâmica de marcha normal; picos $< 2,0\text{ g}$ sem falsos alarmes. |
+| **3. Movimentação Vigorosa (ADL)** | $53,0\text{ s} - 75,0\text{ s}$ | $1.100$ | $1,322 \pm 0,355\text{ g}$ | $0,690\text{ g}$ | $2,648\text{ g}$ | Excitação dinâmica intensa; picos contidos em $2,65\text{ g}$. |
+| **4. Queda e Choques Agudos** | $75,0\text{ s} - 105,6\text{ s}$ | $1.533$ | $1,228 \pm 0,267\text{ g}$ | **$0,086\text{ g}$** | **$3,464\text{ g}$** | Vales de queda livre ($< 0,5\text{ g}$) seguidos de saturação em $3,464\text{ g}$. |
 
 > [!NOTE]
 > A saturação em exatamente $3,464\text{ g}$ decorre do limite de escala configurado no hardware ($\pm 2\text{ g}$ por eixo: $\sqrt{2^2 + 2^2 + 2^2} = \sqrt{12} \approx 3,4641\text{ g}$), comprovando experimentalmente a necessidade de fundos de escala maiores ($\pm 8\text{ g}$ ou $\pm 16\text{ g}$) implementados nas bases SisFall/UMAFall.
